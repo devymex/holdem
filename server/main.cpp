@@ -32,6 +32,8 @@ int main(int argc, char* argv[])
     }
     catch (std::exception &e)
     {
+		log.detailed_out() << "[Exception] " << e.what() << std::endl;
+		log.msg() << "[Exception] " << e.what() << std::endl;
         log.err() << "Exception: " << e.what() << std::endl;
 		log.close_file();
     }

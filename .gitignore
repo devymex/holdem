@@ -6,4 +6,5 @@ server/server
 *.exe
 doc/
 *.zip
+*.xlsx
 

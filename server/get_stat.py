@@ -74,11 +74,12 @@ def write_per_game_stats(worksheet, title, data, span, stat_func_title):
 	row_cnt = row_cnt + 1
 	worksheet.write(row, 0, title)
 
-	for i, item in enumerate(data):
+	for i, item in enumerate(stat_func_title):
 		worksheet.merge_range(row, i*span+1, row, (i+1)*span, item)
 
-	for i, item in enumerate(stat_func_title):
-		worksheet.merge_range(row, (i+len(data))*span+1, row, (i+len(data)+1)*span, item)
+	for i, item in enumerate(data):
+		worksheet.merge_range(row, (i+len(stat_func_title))*span+1, row, (i+len(stat_func_title)+1)*span, item)
+
 
 def write_per_player_stats_title(worksheet, title, num_of_col):
 	global row_cnt
@@ -100,6 +101,14 @@ def write_per_player_stats(worksheet, player_name, player_maps, Time, stat_func)
 	worksheet.write(row, 0, player_name)
 	col = 0
 	player_map = map(lambda whole_map : whole_map[player_name], player_maps)
+
+	range_str = "%s:%s" % (xl_rowcol_to_cell(row, len(stat_func) * len(player_map) + 1), xl_rowcol_to_cell(row, len(player_map) * (len(stat_func) + len(Time))))
+	for func in stat_func:
+		for i in xrange(len(player_map)):
+			col += 1
+			worksheet.write_formula(row, col, 
+				"{=%s(%s * (MOD(COLUMN(%s),%d)=%d))}" % (func, range_str, range_str, len(player_map), i))
+
 	for time in Time:
 		for item in player_map:
 			col += 1
@@ -108,12 +117,6 @@ def write_per_player_stats(worksheet, player_name, player_maps, Time, stat_func)
 			else:
 				worksheet.write(row, col, None)
 	
-	range_str = "%s:%s" % (xl_rowcol_to_cell(row, 1), xl_rowcol_to_cell(row, len(player_map) * len(Time)))
-	for func in stat_func:
-		for i in xrange(len(player_map)):
-			col += 1
-			worksheet.write_formula(row, col, 
-				"{=%s(%s * (MOD(COLUMN(%s),%d)=%d))}" % (func, range_str, range_str, len(player_map), i))
 			
 
 def set_column_width(worksheet, first, next, num_of_col):
@@ -127,7 +130,7 @@ def set_column_width(worksheet, first, next, num_of_col):
 def set_column_format(workbook, worksheet, num_item, num_time, num_stat_func, column_width):
 	average_chips_format = workbook.add_format()
 	average_chips_format.set_num_format("0")
-	average_chips_col = num_item * num_time + 3
+	average_chips_col = 3
 	worksheet.set_column(average_chips_col, average_chips_col, column_width[0], average_chips_format)
 
 	average_survival_time_format = workbook.add_format()
@@ -196,7 +199,7 @@ if argc < 3:
 	sys.exit(0)
 
 workbook = xlsxwriter.Workbook(sys.argv[1], 
-							   {"default_date_format": "mmmm d yyyy hh:mm::ss"})
+							   {"default_date_format": "mmmm d yyyy hh:mm:ss"})
 
 for dir in sys.argv[2:]:
 	get_stats_from_dir(dir, workbook, workbook.add_worksheet(dir.replace('/', '_').replace('\\','_')))

@@ -47,7 +47,7 @@ const char* HAND_STRING[11] = {
 class Game {
 public:
     Game(IO &io, const std::vector<std::string> &names, int init_chips)
-        : io(io), names(names), chips(names.size(), init_chips), blind(1), n(names.size()), dealer(n-1), hole_cards(n), current_bets(n), actioned(n, false), checked(n, false), folded(n, false), game_cnt(0), log(Log::get_instance())
+        : io(io), names(names), chips(names.size(), init_chips), blind(1), n(names.size()), dealer(n-1), hole_cards(n), current_bets(n), actioned(n, false), checked(n, false), folded(n, false), game_cnt(0), log(Log::get_instance()), survival_time(n, 0) 
     {
     }
 
@@ -62,6 +62,10 @@ public:
 		log.detailed_out() << std::endl << ">=========================================>" << std::endl;
 		log.out() << "[GAME " << game_cnt << "] starts" << std::endl;
         broadcast("game starts");
+
+		for (auto player : player_list) {
+			++survival_time[player];
+		}
 
 		for (int i = 0; i < n; ++i) {
 			log.detailed_out() << "[GAME INFO] Player " << name_of(i) << " has " << chips[i] << " chips." << std::endl;
@@ -186,8 +190,14 @@ public:
 
 		log.out() << "[FINAL STAT] final chips: " << std::endl;
 		for (int i = 0; i < n; ++i) {
-			log.out() << "[FINAL STAT] player" << names[i] << " has " << chips[i] << " chips" << std::endl;
+			log.out() << "[FINAL STAT] player " << names[i] << " has " << chips[i] << " chips" << std::endl;
 		}
+
+		log.out() << "[FINAL STAT] survival time: " << std::endl;
+		for (int i= 0; i < n; ++i) {
+			log.out() << "[FINAL STAT] player " << names[i] << " has survived " << survival_time[i] << " games" << std::endl;
+		}
+
 	}
 
 private:
@@ -974,8 +984,9 @@ private:
 
 		player_list.clear();
 		for (int i = 0; i < n; ++i)
-			if (chips[i] > 0)
+			if (chips[i] > 0) {
 				player_list.push_back(i);
+			}
 
 		if (player_list.size() == 0) {
 			log.err() << "[ERROR] no players left" << std::endl;
@@ -1032,6 +1043,7 @@ private:
 	Log& log;
 	std::string round_name;
 
+	std::vector<int> survival_time;
 };
 
 }

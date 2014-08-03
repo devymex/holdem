@@ -53,17 +53,19 @@ public:
 	}
 
 	void new_file() {
+		std::time_t t = std::time(nullptr);
+		char strbf[100];
+		std::strftime(strbf, sizeof(strbf), "%Y-%m-%d-%H-%M-%S", std::localtime(&t));
+		
 		if (!log_file_name.empty()) {
-			std::time_t t = std::time(nullptr);
-			char strbf[100];
-			std::strftime(strbf, sizeof(strbf), "%Y-%m-%d-%H-%M-%S", std::localtime(&t));
-			std::cout << "time: " << strbf << std::endl;
-			std::cout << ">=========================================>"  << std::endl;
 
 			the_out = new std::ofstream(log_file_name + "_" + strbf + ".log");
 			the_msg = new std::ofstream(log_file_name + "_" + strbf + "_msg.log");
 			out_output.the_out = the_out;
 		}
+
+		out() << "[time] " << strbf << std::endl;
+		out() << ">=========================================>"  << std::endl;
 	}
 
 	void close_file() {

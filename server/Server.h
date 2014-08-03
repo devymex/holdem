@@ -88,6 +88,7 @@ private:
     {
 		log.new_file();
 		log.out() << "[GAMES " << Session::game_num << "] starts" << std::endl;
+		log.out() << "[GAMES " << Session::game_num << "] #player = " << num_players_ << std::endl;
         std::vector<std::string> names;
 
 		int player_id = 0;

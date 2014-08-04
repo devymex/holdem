@@ -61,6 +61,8 @@ public:
 		
 		log.detailed_out() << std::endl << ">=========================================>" << std::endl;
 		log.out() << "[GAME " << game_cnt << "] starts" << std::endl;
+		log.msg() << std::endl << ">=========================================>" << std::endl;
+		log.msg() << "[GAME " << game_cnt << "] starts" << std::endl;
         broadcast("game starts");
 
 		for (auto player : player_list) {
@@ -390,9 +392,9 @@ private:
 		int straight_leading = -1;
 		{
 			// special case of A, 2, 3, 4, 5
-			if (hand[0].rank == 14 && hand[4].rank == 5 
-				&& hand[1].rank == 2 && hand[2].rank == 3
-				&& hand[3].rank == 4) {
+			if (hand[0].rank == 14 && hand[1].rank == 5 
+				&& hand[4].rank == 2 && hand[3].rank == 3
+				&& hand[2].rank == 4) {
 				straight_leading = 5;
 			}
 

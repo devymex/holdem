@@ -1,4 +1,9 @@
 #!/bin/bash
 
-mkdir -p $2
-./server 12345 $1 1000 $2/log
+if [[ $# != 3 ]]; then
+	echo "Usage: ./run_server <port> <numPlayers> <log_folder>"
+	exit 1
+fi
+
+mkdir -p $3
+./server $1 $2 3000 $3/log

@@ -796,9 +796,22 @@ private:
         vsnprintf(buffer, 4096, format, args);
 
 		log.msg() << "[broadcast] " << buffer << std::endl;
+	
+		int player = 0;
+        try {
+			std::string msg(buffer);
+			for ( ; player < n; ++player) {
+				io.send(player, msg);
+			}
+		}
+		catch (...) {
+			log.msg() << "[Exception] when broadcasting to " << name_of(player) << std::endl;
+			log.detailed_out() << "[Exception] when broadcasting to " << name_of(player) << std::endl;
+			log.err() << "Exception: when broadcasting to " << name_of(player) << std::endl;
 
-        io.broadcast(std::string(buffer));
-        va_end(args);
+			throw ;
+		}
+		va_end(args);
     }
 
     void send(int player, const char *format, ...)
@@ -808,16 +821,35 @@ private:
         va_start(args, format);
         vsnprintf(buffer, 4096, format, args);
 		
-		log.msg() << "[send to " << name_of(player) << "] " << buffer << std::endl;
+		log.msg() << "[send] (" << name_of(player) << ") " << buffer << std::endl;
+		
+		try {
+        	io.send(player, std::string(buffer));
+        }
+		catch (...) {
+			log.msg() << "[Exception] when sending to " << name_of(player) << std::endl;
+			log.detailed_out() << "[Exception] when sending to " << name_of(player) << std::endl;
+			log.err() << "Exception: when sending to " << name_of(player) << std::endl;
 
-        io.send(player, std::string(buffer));
-        va_end(args);
+			throw ;
+		}
+		va_end(args);
     }
 
     void receive(int player, std::string &message)
     {
-        io.receive(player, message);
-		log.msg() << "[receive from " << name_of(player) << "] " << message << std::endl;
+		try {
+        	io.receive(player, message);
+		}
+		catch (...) {
+			log.msg() << "[Exception] when receiving from " << name_of(player) << std::endl;
+			log.detailed_out() << "[Exception] when receiving from " << name_of(player) << std::endl;
+			log.err() << "Exception: when receiving from " << name_of(player) << std::endl;
+
+			throw ;
+		}
+
+		log.msg() << "[receive] (" << name_of(player) << ") " << message << std::endl;
 	}
 
 	// Deprecated

@@ -236,6 +236,7 @@ hand\_type和card\_type定义为：
 
 	\multicolumn{2}{|c|}{单局游戏的信息，可以在preflop到game\_end函数中调用}	\\\hline
 	int number\_of\_participants();	&	本局游戏中玩家数量		\\\hline
+	const std::vector<int>\& participants() const; & 本局参与游戏的玩家编号	\\\hline
 	bool out\_of\_game();		&	自己是否已经出局	\\\hline
 	int dealer();	&	本局的庄家编号		\\\hline
 	int blind();	&	本局小盲注大小		\\\hline

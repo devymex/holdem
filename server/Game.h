@@ -10,6 +10,7 @@
 #include <cctype>
 #include <iostream>
 #include <cstdio>
+#include <cstdlib>
 #include "Card.h"
 #include "Deck.h"
 #include "IO.h"
@@ -49,6 +50,7 @@ public:
     Game(IO &io, const std::vector<std::string> &names, int init_chips)
         : io(io), names(names), chips(names.size(), init_chips), blind(1), n(names.size()), dealer(n-1), hole_cards(n), current_bets(n), actioned(n, false), checked(n, false), folded(n, false), game_cnt(0), log(Log::get_instance()), survival_time(n, 0) 
     {
+		dealer = rand() % n;
     }
 
     int run(int the_blind)

@@ -2,9 +2,21 @@ import os
 import sys
 import datetime
 import xlsxwriter
+import shutil
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 pwd = os.getcwd()
+
+def move_re_log(file):
+	if len(file) < 4 or file[-4:] != ".log":
+		return
+	name_part = file[:-4]
+
+	if (not os.access("re", os.F_OK)):
+		os.mkdir("re")
+
+	shutil.move(name_part + ".log", "re")
+	shutil.move(name_part + "_msg.log", "re")
 
 def get_date_from_log(file):
 	if len(file) != 27 or file[:4] != "log_" or file[-4:] != ".log":
@@ -35,6 +47,8 @@ def get_player_count(fin):
 def get_total_games(fin):
 	line = fin.readline()
 	while len(line) < 12 or line[:12] != "[FINAL STAT]":
+		if len(line) >= 11 and line[:11] == "[Exception]":
+			return -1
 		line = fin.readline()
 	return eval(line[line.rfind(':')+2:])
 
@@ -66,6 +80,12 @@ def get_stats_of_one_item(fin, stat_map, skip_cnt, player_cnt, value_index, play
 		if do_eval:
 			value = eval(value)
 		add_item(stat_map, name, value, time)
+
+def get_time_order(Time):
+	return sorted(range(len(Time)), lambda x, y : (Time[x] < Time[y] and -1) or 1)
+
+def reorder_per_game_stats(stat, order):
+	return map(lambda x : stat[x], order)
 
 row_cnt = 0
 def write_per_game_stats(worksheet, title, data, span, stat_func_title):
@@ -155,11 +175,18 @@ def get_stats_from_dir(dir, workbook, worksheet):
 		if time == False:
 			continue
 
-		print "Processing", file
+		print "Processing", file,
 		fin = open(file, "r")
 		
 		player_count = get_player_count(fin)
 		total_games = get_total_games(fin)
+
+		if total_games == -1:
+			print "[RE]"
+			move_re_log(file)
+			continue
+		else:
+			print
 		
 		Time.append(time)
 		PlayerCnt.append(player_count)
@@ -170,7 +197,11 @@ def get_stats_from_dir(dir, workbook, worksheet):
 
 		fin.close()
 	
-	
+	time_order = get_time_order(Time)
+	Time = reorder_per_game_stats(Time, time_order)
+	PlayerCnt = reorder_per_game_stats(PlayerCnt, time_order)
+	TotalGames = reorder_per_game_stats(TotalGames, time_order)
+
 	global row_cnt
 	row_cnt = 0
 

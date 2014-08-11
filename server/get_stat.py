@@ -123,12 +123,18 @@ def write_per_player_stats(worksheet, player_name, player_maps, Time, stat_func)
 	player_map = map(lambda whole_map : whole_map[player_name], player_maps)
 
 	range_str = "%s:%s" % (xl_rowcol_to_cell(row, len(stat_func) * len(player_map) + 1), xl_rowcol_to_cell(row, len(player_map) * (len(stat_func) + len(Time))))
-	for func in stat_func:
-		for i in xrange(len(player_map)):
-			col += 1
-			worksheet.write_formula(row, col, 
-				"{=%s(%s * (MOD(COLUMN(%s),%d)=%d))}" % (func, range_str, range_str, len(player_map), i))
-
+	
+	func = "SUM"
+	for i in xrange(len(player_map)):
+		col += 1
+		worksheet.write_formula(row, col, 
+			"{=%s(%s * (MOD(COLUMN(%s),%d)=%d))}" % (func, range_str, range_str, len(player_map), i))
+	
+	func = "AVERAGE"
+	for i in xrange(len(player_map)):
+		col += 1
+		worksheet.write_formula(row, col, "= %s / %d" % (xl_rowcol_to_cell(row, col - len(stat_func)), len(Time)))
+        
 	for time in Time:
 		for item in player_map:
 			col += 1
@@ -183,6 +189,7 @@ def get_stats_from_dir(dir, workbook, worksheet):
 
 		if total_games == -1:
 			print "[RE]"
+			fin.close()
 			move_re_log(file)
 			continue
 		else:

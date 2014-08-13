@@ -19,7 +19,7 @@ public:
 
 	bool isInitialized() const { return initialized; }
 
-	Client(const std::string& host, const std::string& service);
+	Client(const std::string& host, const std::string& service, const char* player_id);
 	
 	enum LOOP_RESULT {LOOP_NORMAL, LOOP_END, LOOP_MSG_ERROR};
 	

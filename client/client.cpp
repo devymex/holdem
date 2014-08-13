@@ -8,7 +8,7 @@
 
 // public
 
-Client::Client(const std::string& host, const std::string& service): 
+Client::Client(const std::string& host, const std::string& service, const char* player_id): 
 	io(host, service), 
 	login_name("uninitialized"), 
 	names(), 
@@ -20,8 +20,13 @@ Client::Client(const std::string& host, const std::string& service):
 	player(*new Player(*this)) {
 	
 	community_cards.reserve(5);
+	
+	std::string login_name_to_submit = player.login_name();
+	if (player_id) {
+		login_name_to_submit = login_name_to_submit + "_" + player_id;
+	}
 
-	send("login %s", player.login_name().c_str());	// no white space in name
+	send("login %s", login_name_to_submit.c_str());	// no white space in name
 	
 	std::string confirmation;
 	receive(confirmation);
@@ -517,7 +522,7 @@ typename Client::LOOP_RESULT Client::bet_loop(std::function<decision_type ()> ge
 
 		pot.set_chips(pot_amount / pot.contributors().size());
 		
-		if (pot_id + 1 == pots.size()) {
+		if ((unsigned)pot_id + 1 == pots.size()) {
 			if (!pots.back().merge(pot)) {
 				ERR_OUTPUT("[ERROR] the pots should be able to be merged\n");
 				return LOOP_MSG_ERROR;

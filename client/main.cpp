@@ -7,16 +7,21 @@ using namespace holdem;
 
 int main(int argc, char** argv)
 {
-	if (argc != 3){
-		std::cout << "Usage: client <ip> <port>" << endl;
+	if (argc < 3 || argc > 4){
+		std::cout << "Usage: client <ip> <port> [player id]" << endl;
 		return 0;
 	}
 
 	std::cerr << "Starting client with ip " << argv[1]
 			  << " port " << argv[2] << endl;
 
+	const char* player_id = nullptr;
+	if (argc == 4) {
+		player_id = argv[3];
+	}
+
 	try {
-		Client client(argv[1], argv[2]);
+		Client client(argv[1], argv[2], player_id);
 
 		if (!client.isInitialized()) {
 			std::cerr << "[ERROR] Unable to initialize the client." << std::endl;

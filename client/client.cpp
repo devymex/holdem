@@ -598,14 +598,14 @@ void Client::decide(const decision_type& decision, const std::string& round_name
 			int to_bet = *std::max_element(current_bets.begin(), current_bets.end()) - current_bets[my_id];	
 			if (decision.second <= 0) {
 				if (bet_sequence.empty()) {
-					OUTPUT("[WARNING] CANNOT raise a non-negative quantity of chips. Check instead.\n");
+					OUTPUT("[WARNING] CANNOT raise a non-positive quantity of chips. Check instead.\n");
 
 					send("check");
 					break;
 				}
 
 				else {
-					OUTPUT("[WARNING] CANNOT raise a non-negative quantity of chips. Call instead.\n");
+					OUTPUT("[WARNING] CANNOT raise a non-positive quantity of chips. Call instead.\n");
 
 					decide(make_decision(CALL), round_name);
 					break;

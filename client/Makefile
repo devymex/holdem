@@ -9,7 +9,7 @@ TARGET = client
 LIBS = -lpthread -lboost_system
 CXX = g++
 #CFLAGS = -std=c++11 -Wall -Wextra -g		## use this for debug
-CFLAGS = -std=c++11 -Wall -Wextra -O2 -DNDEBUG
+CFLAGS = -std=c++11 -O2 -DNDEBUG
 
 HEADERS = client.h common.h IO.h player.h pot.h query.h
 OBJECTS = common.o client.o ${AI}.o main.o

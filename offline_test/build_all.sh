@@ -39,17 +39,21 @@ do
 	if [[ `ls ${name}/*.cpp 2>/dev/null` ]]; then
 		echo "cpp found, compiling"
 		mkdir tmp
-		cp -f ${client_path}/* tmp/
+		cp -f ${client_path}/*.h tmp/
+		cp -f ${client_path}/*.cpp tmp/
+		cp -f ${client_path}/${MAKEFILE} tmp/Makefile-template
 		cp -f ${name}/*.cpp tmp/
 		cp -f ${name}/*.h tmp/
-
-		AI=`sed -n '/AI = / s/AI = //p' ${name}/Makefile`
+		
+		cd ${name}
+		AI=$(ls *.cpp | sed -n -e 's/.cpp//p' -e 'q')
+		cd ..
 		if [[ ! ${AI} ]]; then
 			echo "AI is not properly set"
 		else
 			cd tmp
-			sed 's/AI = example/AI = '${AI}'/' ${MAKEFILE} > Makefile
-			${MAKE}
+			sed 's/AI = example/AI = '${AI}'/' Makefile-template > Makefile
+			${MAKE} 
 
 			if [[ $? -eq 0 ]]; then
 				cp -f ./client${EXEC_SUFFIX} ../bin/${name}${EXEC_SUFFIX}

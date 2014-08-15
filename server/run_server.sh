@@ -6,4 +6,4 @@ if [[ $# != 3 ]]; then
 fi
 
 mkdir -p $3
-./server $1 $2 3000 $3/log
+./server $1 $2 3000 -l $3/log

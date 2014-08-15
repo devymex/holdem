@@ -16,11 +16,12 @@ using boost::asio::ip::tcp;
 
 class Server : public IO {
 public:
-    Server(boost::asio::io_service &io_service, const int port, const int num_players, const int initial_chips)
+    Server(boost::asio::io_service &io_service, const int port, const int num_players, const int initial_chips, int num_games)
         : io_service_(io_service),
           acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
           num_players_(num_players),
           initial_chips_(initial_chips),
+		  num_games(num_games),
 		  log(Log::get_instance())
     {
 		log.err() << "Starting server with port " << port << std::endl;
@@ -142,12 +143,17 @@ private:
     	sessions_.clear();
 
 		log.close_file();
+
+		if (num_games > 0 && Session::game_num >= num_games) {
+			io_service_.stop();
+		}
 	}
 
     boost::asio::io_service &io_service_;
     tcp::acceptor acceptor_;
     const int num_players_;
     const int initial_chips_;
+	const int num_games;
     std::vector<std::unique_ptr<Session>> sessions_;
 
 	Log& log;

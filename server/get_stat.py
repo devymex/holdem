@@ -46,6 +46,149 @@ def get_player_count(fin):
 	line = fin.readline()
 	return eval(line[line.rfind('=')+2:])
 
+def readline(fin):
+	ret = fin.readline().rstrip('\n')
+	#print ret
+	return ret
+
+## returns the number of total games
+def get_player_detailed_stats(fin, win_by_all_in, time):
+	chips = {}
+	win_by_all_in_single_game = {}
+	current_bets = {}
+	while True:
+		line = readline(fin)
+		if line.startswith("[Player "):
+			line_list = line.split(' ')
+			name = ' '.join(line_list[2:])
+			chips[name] = 3000
+			win_by_all_in_single_game[name] = 0
+			current_bets[name] = 0
+		elif line.startswith("[GAMES INFO]"):
+			line_list = line.split(' ')
+			initial_chips = eval(line_list[-1])
+			for name in chips.viewkeys():
+				chips[name] = initial_chips
+			readline(fin)
+			break
+		elif line.startswith("[Exception]"):
+			return -1
+		else:
+			print "unknown situation:", line
+			sys.exit(1)
+
+	while True:
+		readline(fin)
+		line = readline(fin)
+		if line.startswith("[FINAL STAT]"):
+			break
+
+		## GAME INFO
+		while True:
+			line = readline(fin)
+			if line.startswith("[GAME INFO]"):
+				if line.find("blind bets") != -1:
+					break
+			elif line.startswith("[Exception]"):
+				return -1
+			else:
+				break
+		if not line.startswith("[GAME INFO]"):
+			break
+
+		## small blind
+		name, value = get_name_value_pair(line, -1, 3, "blind")
+		value = eval(value)
+		chips[name] -= value
+		current_bets[name] = value
+
+		## big blind
+		line = readline(fin)
+		if line.startswith("[Exception]"):
+			return -1
+		name, value = get_name_value_pair(line, -1, 3, "blind")
+		value = eval(value)
+		chips[name] -= value
+		current_bets[name] = value
+	
+		while True:
+			line = readline(fin)
+			if line.startswith("[PREFLOP]"):
+				break
+			elif line.startswith("[Exception]"):
+				return -1
+		for round_name in ("[PREFLOP]", "[FLOP]", "[TURN]", "[RIVER]"):
+			if not line.startswith(round_name):
+				break
+			while True:
+				line = readline(fin)
+				if line.startswith("[WARNING]"):
+					continue
+				elif line.startswith("[Exception]"):
+					return -1
+				elif not line.startswith(round_name):
+					break
+				else:
+					if line.find("calls") != -1:
+						if len(current_bets.viewvalues()) == 0:
+							to_bet = 0
+						else:
+							to_bet = max(current_bets.viewvalues())
+						name, value = get_name_value_pair(line, -1, 2, "calls")
+						to_bet -= current_bets[name]
+						chips[name] -= to_bet
+						current_bets[name] += to_bet
+					elif line.find("raises by") != -1:
+						if len(current_bets.viewvalues()) == 0:
+							to_bet = 0
+						else:
+							to_bet = max(current_bets.viewvalues())
+						name, value = get_name_value_pair(line, -1, 2, "raises")
+						to_bet -= current_bets[name]
+						value = eval(value)
+						to_bet += value
+						chips[name] -= to_bet
+						current_bets[name] += to_bet
+			for name in current_bets.viewkeys():
+				current_bets[name] = 0
+		
+		## GAME STAT
+		while not line.startswith("[GAME STAT]"):
+			if line.startswith("[Exception]"):
+				return -1
+			line = readline(fin)
+
+		while True:
+			line = readline(fin)
+			if line.startswith("[GAME STAT]"):
+				if line.endswith("chips"):
+					name, value = get_name_value_pair(line, -2, 3, "gets")
+					value = eval(value)
+					if chips[name] == 0:
+						win_by_all_in_single_game[name] += 1
+					chips[name] += value
+			elif line == "":
+				break
+			elif line.startswith("[GAMES STAT]"):
+				continue
+			elif line.startswith("[Exception]"):
+				return -1
+			else:
+				print "Unknown situation:", line
+				sys.exit(1)
+
+	if not line.startswith("[FINAL STAT]"):
+		print "Unknown situation:", line
+		sys.exit(1)
+
+	total_games = eval(line[line.rfind(':')+2:])
+
+	for name, value in win_by_all_in_single_game.viewitems():
+		add_item(win_by_all_in, name, value, time)	
+
+	return total_games
+
+## Deprecated
 def get_total_games(fin):
 	line = fin.readline()
 	while len(line) < 12 or line[:12] != "[FINAL STAT]":
@@ -107,7 +250,7 @@ def write_per_player_stats_title(worksheet, title, num_of_col):
 	global row_cnt
 	row = row_cnt
 	row_cnt += 1
-
+	
 	worksheet.write(row, 0, "name")
 	col = 0
 	for i in xrange(num_of_col):
@@ -129,23 +272,15 @@ def write_per_player_stats(worksheet, player_name, player_maps, Time, stat_func)
 	func = "SUM"
 	for i in xrange(len(player_map)):
 		col += 1
-		worksheet.write_formula(row, col, 
-			"{=%s(%s * (MOD(COLUMN(%s),%d)=%d))}" % (func, range_str, range_str, len(player_map), i))
-	
-	func = "AVERAGE"
-	for i in xrange(len(player_map)):
-		col += 1
-		worksheet.write_formula(row, col, "= %s / %d" % (xl_rowcol_to_cell(row, col - len(stat_func)), len(Time)))
+		worksheet.write_formula(row, col, "{=%s(%s * (MOD(COLUMN(%s),%d)=%d))}" % (func, range_str, range_str, len(player_map), (i + 2) % len(player_map)))
         
-	for time in Time:
-		for item in player_map:
-			col += 1
-			if time in item:
-				worksheet.write(row, col, item[time])
-			else:
-				worksheet.write(row, col, None)
-	
-			
+        for time in Time:
+                for item in player_map:
+                        col += 1
+                        if time in item:
+                                worksheet.write(row, col, item[time])
+                        else:
+                                worksheet.write(row, col, None)
 
 def set_column_width(worksheet, first, next, num_of_col):
 	worksheet.set_column(0, 0, first)
@@ -156,15 +291,7 @@ def set_column_width(worksheet, first, next, num_of_col):
 			worksheet.set_column(col, col, w)
 
 def set_column_format(workbook, worksheet, num_item, num_time, num_stat_func, column_width):
-	average_chips_format = workbook.add_format()
-	average_chips_format.set_num_format("0")
-	average_chips_col = 3
-	worksheet.set_column(average_chips_col, average_chips_col, column_width[0], average_chips_format)
-
-	average_survival_time_format = workbook.add_format()
-	average_survival_time_format.set_num_format("0.0")
-	average_survival_time_col = average_chips_col + 1
-	worksheet.set_column(average_survival_time_col, average_survival_time_col, column_width[1], average_survival_time_format) 
+	pass
 
 def get_stats_from_dir(dir, workbook, worksheet):
 	print "Entering", dir
@@ -178,6 +305,7 @@ def get_stats_from_dir(dir, workbook, worksheet):
 	TotalGames = []
 	chips_map = {}
 	survival_time_map = {}
+	win_by_all_in = {}
 	for file in files:
 		time = get_date_from_log(file)
 		if time == False:
@@ -187,7 +315,7 @@ def get_stats_from_dir(dir, workbook, worksheet):
 		fin = open(file, "r")
 		
 		player_count = get_player_count(fin)
-		total_games = get_total_games(fin)
+		total_games = get_player_detailed_stats(fin, win_by_all_in, time)
 
 		if total_games == -1:
 			print "[RE]"
@@ -214,11 +342,11 @@ def get_stats_from_dir(dir, workbook, worksheet):
 	global row_cnt
 	row_cnt = 0
 
-	stat_func_title = ["Sum", "Average"]
-	stat_func = ["SUM", "AVERAGE"]
-	player_maps = [chips_map, survival_time_map]
+	stat_func_title = ["Sum"]
+	stat_func = ["SUM"]
+	player_maps = [chips_map, survival_time_map, win_by_all_in]
 	column_span = max(1, len(player_maps))
-	column_width = [8, 12] # for chips and survival time
+	column_width = [8, 12, 12] # for chips, survival_time and win_by_all_in
 	set_column_width(worksheet, 12, column_width, len(Time) + len(stat_func_title))
 	set_column_format(workbook, worksheet, len(player_maps), len(Time), len(stat_func_title), column_width)
 	worksheet.freeze_panes(4, 1)
@@ -227,7 +355,7 @@ def get_stats_from_dir(dir, workbook, worksheet):
 	write_per_game_stats(worksheet, "#Player", PlayerCnt, column_span, [''] * len(stat_func_title))
 	write_per_game_stats(worksheet, "#Game", TotalGames, column_span, [''] * len(stat_func_title))
 
-	write_per_player_stats_title(worksheet, ["Chips", "Survival time"], len(Time) + len(stat_func_title))
+	write_per_player_stats_title(worksheet, ["Chips", "Survival time", "Win by all in"], len(Time) + len(stat_func_title))
 	for name in chips_map.viewkeys():
 		write_per_player_stats(worksheet, name, player_maps, Time, stat_func)
 

@@ -8,6 +8,7 @@ import shutil
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 pwd = os.getcwd()
+THRESHOLD = 500
 
 def move_re_log(file):
 	if len(file) < 4 or file[-4:] != ".log":
@@ -306,6 +307,7 @@ def get_stats_from_dir(dir, workbook, worksheet):
 	chips_map = {}
 	survival_time_map = {}
 	win_by_all_in = {}
+	chips_greater_than_threshold = {}
 	for file in files:
 		time = get_date_from_log(file)
 		if time == False:
@@ -334,6 +336,14 @@ def get_stats_from_dir(dir, workbook, worksheet):
 
 		fin.close()
 	
+	for name in chips_map.viewkeys():
+		the_chips_map = chips_map[name]
+		for time in the_chips_map:
+			if the_chips_map[time] >= THRESHOLD:
+				add_item(chips_greater_than_threshold, name, 1, time)
+			else:
+				add_item(chips_greater_than_threshold, name, 0, time)
+	
 	time_order = get_time_order(Time)
 	Time = reorder_per_game_stats(Time, time_order)
 	PlayerCnt = reorder_per_game_stats(PlayerCnt, time_order)
@@ -344,9 +354,9 @@ def get_stats_from_dir(dir, workbook, worksheet):
 
 	stat_func_title = ["Sum"]
 	stat_func = ["SUM"]
-	player_maps = [chips_map, survival_time_map, win_by_all_in]
+	player_maps = [chips_map, survival_time_map, win_by_all_in, chips_greater_than_threshold]
 	column_span = max(1, len(player_maps))
-	column_width = [8, 12, 12] # for chips, survival_time and win_by_all_in
+	column_width = [8, 12, 12, 12] # for chips, survival_time and win_by_all_in
 	set_column_width(worksheet, 12, column_width, len(Time) + len(stat_func_title))
 	set_column_format(workbook, worksheet, len(player_maps), len(Time), len(stat_func_title), column_width)
 	worksheet.freeze_panes(4, 1)
@@ -355,7 +365,7 @@ def get_stats_from_dir(dir, workbook, worksheet):
 	write_per_game_stats(worksheet, "#Player", PlayerCnt, column_span, [''] * len(stat_func_title))
 	write_per_game_stats(worksheet, "#Game", TotalGames, column_span, [''] * len(stat_func_title))
 
-	write_per_player_stats_title(worksheet, ["Chips", "Survival time", "Win by all in"], len(Time) + len(stat_func_title))
+	write_per_player_stats_title(worksheet, ["Chips", "Survival time", "Win by all in", "chips >= %d" % THRESHOLD], len(Time) + len(stat_func_title))
 	for name in chips_map.viewkeys():
 		write_per_player_stats(worksheet, name, player_maps, Time, stat_func)
 
